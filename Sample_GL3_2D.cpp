@@ -209,7 +209,7 @@ void draw3DObject (struct VAO* vao)
 float time_travel = 0;
 float walls_position[300][2];
 int array_postion = 0;
-float initial_velocity =40;
+float initial_velocity =20;
 float initial_velocity1 = initial_velocity;
 float angle_thrown = M_PI/3;
 float vertical_translation = -2;
@@ -225,6 +225,8 @@ double xmousePos,ymousePos;
 float tanker_angle= 0;
 bool shoot =0;
 float distance1;
+float distance3;
+float power=40;
 /* Executed when a regular key is pressed/released/held-down */
 /* Prefered for Keyboard events */
 void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -279,8 +281,8 @@ void mouseButton (GLFWwindow* window, int button, int action, int mods)
             {
               shoot =1;
               angle_thrown = tanker_angle - M_PI/6;
-              initial_velocity = 40*cos(angle_thrown);
-              initial_velocity1 = 40*sin(angle_thrown);
+              initial_velocity = power*cos(angle_thrown);
+              initial_velocity1 = power*sin(angle_thrown);
               horizontal_translation = -3 - 0.1*cos(angle_thrown);
               vertical_translation = -2  - 0.65*sin(angle_thrown);
               time_travel = 0;
@@ -327,7 +329,7 @@ void reshapeWindow (GLFWwindow* window, int width, int height)
     Matrices.projection = glm::ortho(-4.0f, 4.0f, -4.0f, 4.0f, 0.1f, 500.0f);
 }
 
-VAO *triangle, *rectangle;
+VAO *triangle, *rectangle, *powerboxes, *triangle1;
 
 // Creates the triangle object used in this sample code
 void createTriangle ()
@@ -351,6 +353,27 @@ void createTriangle ()
   triangle = create3DObject(GL_TRIANGLES, 3, vertex_buffer_data, color_buffer_data, GL_LINE);
 }
 
+void createTriangle1 ()
+{
+  /* ONLY vertices between the bounds specified in glm::ortho will be visible on screen */
+
+  /* Define vertex array as used in glBegin (GL_TRIANGLES) */
+  static const GLfloat vertex_buffer_data [] = {
+    0, 0,0, // vertex 0
+    0,0.2,0, // vertex 1
+    0.2,0,0, // vertex 2
+  };
+
+  static const GLfloat color_buffer_data [] = {
+    1,1,1, // color 0
+    1,1,1, // color 1
+    1,1,1, // color 2
+  };
+
+  // create3DObject creates and returns a handle to a VAO that can be used later
+  triangle1 = create3DObject(GL_TRIANGLES, 3, vertex_buffer_data, color_buffer_data, GL_LINE);
+}
+
 // Creates the rectangle object used in this sample code
 void createRectangle ()
 {
@@ -366,29 +389,117 @@ void createRectangle ()
   };
 
   static const GLfloat color_buffer_data [] = {
-    1,0,0, // color 1
-    0,0,1, // color 2
-    0,1,0, // color 3
+    152/255.0, 205/255.0, 152/255.0,
+    152/255.0, 205/255.0, 152/255.0,
+    152/255.0, 205/255.0, 152/255.0,
 
-    0,1,0, // color 3
-    0.3,0.3,0.3, // color 4
-    1,0,0  // color 1
+    152/255.0, 205/255.0, 152/255.0,
+    152/255.0, 205/255.0, 152/255.0,
+    152/255.0, 205/255.0, 152/255.0,  
   };
 
   // create3DObject creates and returns a handle to a VAO that can be used later
   rectangle = create3DObject(GL_TRIANGLES, 6, vertex_buffer_data, color_buffer_data, GL_FILL);
 }
 
+void createPowerBoxes()
+{
+  // GL3 accepts only Triangles. Quads are not supported
+  static const GLfloat vertex_buffer_data [] = {
+    -0.1,-0.1,0, // vertex 1
+    0.1,-0.1,0, // vertex 2
+    0.1, 0.1,0, // vertex 3
+
+    0.1, 0.1,0, // vertex 3
+    -0.1, 0.1,0, // vertex 4
+    -0.1,-0.1,0  // vertex 1
+  };
+
+  static const GLfloat color_buffer_data [] = {
+    1,1,1,
+    1,1,1,
+    1,1,1,
+    1,1,1,
+    1,1,1,
+    1,1,1,  
+  };
+
+  // create3DObject creates and returns a handle to a VAO that can be used later
+  powerboxes = create3DObject(GL_TRIANGLES, 6, vertex_buffer_data, color_buffer_data, GL_FILL);
+}
 float camera_rotation_angle = 90;
 float rectangle_rotation = 0;
 float triangle_rotation = 0;
 
+void drawing_walls(float x_centre,float y_centre,VAO* obj)
+{
+  Matrices.view = glm::lookAt(glm::vec3(0,0,3), glm::vec3(0,0,0), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane 
+  glm::mat4 VP = Matrices.projection * Matrices.view;
+  glm::mat4 MVP;  // MVP = Projection * View * Model
+  Matrices.model = glm::mat4(1.0f);
+  glm::mat4 translateRectangle = glm::translate (glm::vec3(x_centre,y_centre, 0));        // glTranslatef
+  Matrices.model *= translateRectangle;
+  MVP = VP * Matrices.model;
+  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+  draw3DObject(obj); 
+}
 /* Render the scene with openGL */
 /* Edit this function according to your assignment */
-
-void bullet()
+void wall_collision(float x_centre,float y_centre,VAO* obj)
 {
-  for(int i=0;i<360;i++)
+  // Matrices.view = glm::lookAt(glm::vec3(0,0,3), glm::vec3(0,0,0), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane 
+  // glm::mat4 VP = Matrices.projection * Matrices.view;
+  // glm::mat4 MVP;  // MVP = Projection * View * Model
+  // Matrices.model = glm::mat4(1.0f);
+  // glm::mat4 translateRectangle = glm::translate (glm::vec3(x_centre,y_centre, 0));        // glTranslatef
+  // Matrices.model *= translateRectangle;
+  // MVP = VP * Matrices.model;
+  // glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+  // draw3DObject(obj);
+  drawing_walls(x_centre,y_centre,obj);
+  for(int ii=0;ii<=5;ii+=1)
+  {
+    walls_position[array_postion][0]=x_centre;
+    walls_position[array_postion][1]=-0.5+0.2*ii+y_centre;
+    array_postion++;
+  }
+  for(int iii=0;iii<array_postion;iii++)
+  {
+    distance1 = sqrt((sqr(walls_position[iii][0]-horizontal_translation)) + (sqr(walls_position[iii][1]-vertical_translation)));
+    if(distance1<=0.2)
+    {
+      initial_velocity *= -1*0.8;
+      if(horizontal_translation<x_centre && ((y_centre-0.55)<vertical_translation) &&  vertical_translation<(y_centre+0.55))
+      {
+        horizontal_translation = -0.2+x_centre;
+        cout << "2" << endl;
+      }
+      else if(horizontal_translation>x_centre && ((x_centre-0.55)<vertical_translation<(x_centre+0.55)))
+      {
+        horizontal_translation = x_centre + 0.2;
+        cout << "3" << endl;
+      }
+      else
+      {
+        
+        if(horizontal_translation<3)
+        {
+          initial_velocity1 *= 0.5;
+          vertical_translation = y_centre + 0.9;
+          initial_velocity *= -1*coefficient_of_elasticity;
+        }
+        cout << initial_velocity << " " <<  initial_velocity1 << endl;
+        time_travel = 0;
+        cout << "1" << endl;        // cout << y_centre-0.6  << " " <<  vertical_translation << " " << y_centre+0.6 << endl;
+        // cout << horizontal_translation << " " << x_centre << endl;
+      }
+    } 
+  }
+}
+
+void drawCircle(VAO* obj,float horizontal_translation,float vertical_translation)
+{
+ for(int i=0;i<360;i++)
   {
   Matrices.view = glm::lookAt(glm::vec3(0,0,3), glm::vec3(0,0,0), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane
   glm::mat4 VP = Matrices.projection * Matrices.view;
@@ -400,24 +511,28 @@ void bullet()
   Matrices.model *= triangleTransform; 
   MVP = VP * Matrices.model; // MVP = p * V * M
   glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-  draw3DObject(triangle);
+  draw3DObject(obj);  
+  }
 }
-// cout << time_travel << endl;
+float ar[4];
+void bullet(VAO *obj,float horizontal_translation,float vertical_translation,float time_travel,float angle_thrown)
+{
+  // 
+  drawCircle(obj,horizontal_translation,vertical_translation);
   horizontal_translation += initial_velocity*cos(angle_thrown)*0.005;
   vertical_translation += initial_velocity1*sin(angle_thrown)*0.005 - (time_travel*time_travel);
-  // cout << vertical_translation << endl;
   final_velocity = sqrt(sqr(initial_velocity) - ((horizontal_translation+3)*8*0.001));
   final_velocity1 = initial_velocity1 - time_travel*89;
   // cout << final_velocity1 << " " << initial_velocity1 << " " <<  vertical_translation << endl;
   if(vertical_translation<-3.8)
   {
     time_travel = 0;
+    // cout<<initial_velocity1<<" "<<final_velocity1<<endl;
     initial_velocity1 *= coefficient_of_elasticity;
     vertical_translation = -3.8; 
   }
   time_travel += 0.01;
   // cout<< time_travel << endl;
-
   if(horizontal_translation>4 || horizontal_translation<-4)
   {
     shoot=0;
@@ -425,6 +540,10 @@ void bullet()
     vertical_translation = -2  - 0.65*sin(angle_thrown);
     time_travel = 0;
   }
+  ar[0]=horizontal_translation;
+  ar[1]=vertical_translation;
+  ar[2]=time_travel;
+  ar[3]=angle_thrown;
 }
 
 
@@ -433,7 +552,6 @@ void draw ()
   array_postion = 0;
   // clear the color and depth in the frame buffer
   glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
   // use the loaded shader program
   // Don't change unless you know what you are doing
   glUseProgram (programID);
@@ -450,24 +568,16 @@ void draw ()
   //  Don't change unless you are sure!!
   if(shoot==1)
   {
-    bullet();
+    bullet(triangle,horizontal_translation,vertical_translation,time_travel,angle_thrown);
+    horizontal_translation=ar[0];
+    vertical_translation=ar[1];
+    time_travel=ar[2];
+    angle_thrown=ar[3];
     // initial_velocity = 40*cos(angle_thrown);
     // initial_velocity1 = 40*sin(angle_thrown);
   }
   
-  // Pop matrix to undo transformations till last push matrix instead of recomputing model matrix
-  // glPopMatrix ();
-  // Matrices.model = glm::mat4(1.0f);
-
-  // glm::mat4 translateRectangle = glm::translate (glm::vec3(2, 0, 0));        // glTranslatef
-  // glm::mat4 rotateRectangle = glm::rotate((float)(rectangle_rotation*M_PI/180.0f), glm::vec3(0,0,1)); // rotate about vector (-1,1,1)
-  // Matrices.model *= (translateRectangle * rotateRectangle); 
-  // MVP = VP * Matrices.model;
-  // glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-
-  // draw3DObject draws the VAO given to it using current MVP matrix
-  //draw3DObject(rectangle);
-
+  
   Matrices.view = glm::lookAt(glm::vec3(0,0,3), glm::vec3(0,0,0), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane 
   glm::mat4 VP = Matrices.projection * Matrices.view;
   glm::mat4 MVP;  // MVP = Projection * View * Model
@@ -483,35 +593,25 @@ void draw ()
   draw3DObject(rectangle);
 
   // Increment angles
-  
-  Matrices.model = glm::mat4(1.0f);
-  translateRectangle = glm::translate (glm::vec3(-1,-1, 0));        // glTranslatef
-  Matrices.model *= translateRectangle;
-  MVP = VP * Matrices.model;
-  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-  draw3DObject(rectangle);
-  for(int ii=0;ii<=5;ii+=1)
+  wall_collision(1,-3.2,rectangle);
+  wall_collision(0.9,-3.2,rectangle);
+  wall_collision(0.8,-3.2,rectangle);
+  if(shoot==1)
+    drawCircle(triangle,horizontal_translation,vertical_translation);
+  drawCircle(triangle1,0.9,-2.4);
+  // wall_collision(1,0);
+  for(int iiii=0;iiii<7;iiii++)
+  {  
+    wall_collision(3.9,3.4-iiii*1.2,rectangle);
+  }
+  for(int iiii=0;iiii<distance3+2;iiii++)
   {
-    walls_position[array_postion][0]=-1;
-    walls_position[array_postion][1]=-0.5+0.2*ii+-1;
-    array_postion++;
-    // cout << walls_position[array_postion-1][1];
+    drawing_walls(-3.8+0.3*iiii,3.7,powerboxes);
   }
   //camera_rotation_angle++; // Simulating camera rotation
   //triangle_rotation = triangle_rotation + increments*triangle_rot_dir*triangle_rot_status;
   //rectangle_rotation = rectangle_rotation + increments*rectangle_rot_dir*rectangle_rot_status;
-  for(int iii=0;iii<array_postion;iii++)
-  {
-    distance1 = sqrt((sqr(walls_position[iii][0]-horizontal_translation)) + (sqr(walls_position[iii][1]-vertical_translation)));
-    if(distance1<=0.2)
-    {
-      initial_velocity *= -1;
-      if(horizontal_translation<-1)
-        horizontal_translation = -1.2;
-      else
-        horizontal_translation = -0.8;
-    } 
-  }
+ // }
 }
 
 /* Initialise glfw window, I/O callbacks and the renderer to use */
@@ -570,6 +670,8 @@ void initGL (GLFWwindow* window, int width, int height)
   // Create the models
   createTriangle();
   createRectangle();
+  createPowerBoxes();
+  createTriangle1();
   
   // Create and compile our GLSL program from the shaders
   programID = LoadShaders( "Sample_GL.vert", "Sample_GL.frag" );
@@ -612,6 +714,13 @@ int main (int argc, char** argv)
         if(xmousePos<500)
         {
           tanker_angle = atan2(500 - ymousePos,xmousePos-70) + M_PI/7;
+          distance3 = sqr(-3 - ((xmousePos*8)/600)) + sqr(-2 - (((600-ymousePos)*8)/600));
+          // cout << distance3 <<  " " << -3 - ((xmousePos*8)/600) << " " << -2 - ((ymousePos*8)/600) << endl;
+          distance3 -= 40;
+          distance3 /= 15;
+          distance3 = floor(distance3);
+          power = 30+3*distance3;
+          // cout << power << endl;
         }
         // cout << tanker_angle << endl;
   //      cout << xmousePos <<  " " << ymousePos << endl;
