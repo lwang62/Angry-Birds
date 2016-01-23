@@ -122,6 +122,10 @@ void quit(GLFWwindow *window)
     exit(EXIT_SUCCESS);
 }
 
+float sqr(float x)
+{
+  return x*x;
+}
 
 /* Generate VAO, VBOs and return VAO handle */
 struct VAO* create3DObject (GLenum primitive_mode, int numVertices, const GLfloat* vertex_buffer_data, const GLfloat* color_buffer_data, GLenum fill_mode=GL_FILL)
@@ -203,20 +207,24 @@ void draw3DObject (struct VAO* vao)
  * Customizable functions *
  **************************/
 float time_travel = 0;
-float initial_velocity =20;
+float walls_position[300][2];
+int array_postion = 0;
+float initial_velocity =40;
 float initial_velocity1 = initial_velocity;
 float angle_thrown = M_PI/3;
 float vertical_translation = -2;
 float horizontal_translation = -3;
+float final_velocity=0;
+float final_velocity1=0;
 float triangle_rot_dir = 1;
 float rectangle_rot_dir = 1;
 bool triangle_rot_status = true;
 bool rectangle_rot_status = true;
-float coefficient_of_elasticity = 0.9;
+float coefficient_of_elasticity = 0.8;
 double xmousePos,ymousePos;
 float tanker_angle= 0;
 bool shoot =0;
-
+float distance1;
 /* Executed when a regular key is pressed/released/held-down */
 /* Prefered for Keyboard events */
 void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -271,6 +279,12 @@ void mouseButton (GLFWwindow* window, int button, int action, int mods)
             {
               shoot =1;
               angle_thrown = tanker_angle - M_PI/6;
+              initial_velocity = 40*cos(angle_thrown);
+              initial_velocity1 = 40*sin(angle_thrown);
+              horizontal_translation = -3 - 0.1*cos(angle_thrown);
+              vertical_translation = -2  - 0.65*sin(angle_thrown);
+              time_travel = 0;
+
               //time_travel=0;
             }
             if (action == GLFW_RELEASE)
@@ -392,19 +406,23 @@ void bullet()
   horizontal_translation += initial_velocity*cos(angle_thrown)*0.005;
   vertical_translation += initial_velocity1*sin(angle_thrown)*0.005 - (time_travel*time_travel);
   // cout << vertical_translation << endl;
-  if(vertical_translation<-3.5)
+  final_velocity = sqrt(sqr(initial_velocity) - ((horizontal_translation+3)*8*0.001));
+  final_velocity1 = initial_velocity1 - time_travel*89;
+  // cout << final_velocity1 << " " << initial_velocity1 << " " <<  vertical_translation << endl;
+  if(vertical_translation<-3.8)
   {
     time_travel = 0;
-    initial_velocity1 *= coefficient_of_elasticity; 
+    initial_velocity1 *= coefficient_of_elasticity;
+    vertical_translation = -3.8; 
   }
   time_travel += 0.01;
+  // cout<< time_travel << endl;
 
   if(horizontal_translation>4 || horizontal_translation<-4)
   {
     shoot=0;
-    horizontal_translation = -3 + 0.1*cos(angle_thrown);
-    vertical_translation = -2  + 0.6*sin(angle_thrown);
-    initial_velocity1 = initial_velocity;
+    horizontal_translation = -3 - 0.1*cos(angle_thrown);
+    vertical_translation = -2  - 0.65*sin(angle_thrown);
     time_travel = 0;
   }
 }
@@ -412,6 +430,7 @@ void bullet()
 
 void draw ()
 {
+  array_postion = 0;
   // clear the color and depth in the frame buffer
   glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -432,6 +451,8 @@ void draw ()
   if(shoot==1)
   {
     bullet();
+    // initial_velocity = 40*cos(angle_thrown);
+    // initial_velocity1 = 40*sin(angle_thrown);
   }
   
   // Pop matrix to undo transformations till last push matrix instead of recomputing model matrix
@@ -462,11 +483,35 @@ void draw ()
   draw3DObject(rectangle);
 
   // Increment angles
-  float increments = 1;
   
+  Matrices.model = glm::mat4(1.0f);
+  translateRectangle = glm::translate (glm::vec3(-1,-1, 0));        // glTranslatef
+  Matrices.model *= translateRectangle;
+  MVP = VP * Matrices.model;
+  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+  draw3DObject(rectangle);
+  for(int ii=0;ii<=5;ii+=1)
+  {
+    walls_position[array_postion][0]=-1;
+    walls_position[array_postion][1]=-0.5+0.2*ii+-1;
+    array_postion++;
+    // cout << walls_position[array_postion-1][1];
+  }
   //camera_rotation_angle++; // Simulating camera rotation
   //triangle_rotation = triangle_rotation + increments*triangle_rot_dir*triangle_rot_status;
   //rectangle_rotation = rectangle_rotation + increments*rectangle_rot_dir*rectangle_rot_status;
+  for(int iii=0;iii<array_postion;iii++)
+  {
+    distance1 = sqrt((sqr(walls_position[iii][0]-horizontal_translation)) + (sqr(walls_position[iii][1]-vertical_translation)));
+    if(distance1<=0.2)
+    {
+      initial_velocity *= -1;
+      if(horizontal_translation<-1)
+        horizontal_translation = -1.2;
+      else
+        horizontal_translation = -0.8;
+    } 
+  }
 }
 
 /* Initialise glfw window, I/O callbacks and the renderer to use */
