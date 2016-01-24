@@ -216,6 +216,8 @@ float vertical_translation = -2;
 float horizontal_translation = -3;
 float final_velocity=0;
 float final_velocity1=0;
+float horizontal_translation1=0.9,vertical_translation1=-2.4,initial_velocity2=0,initial_velocity3=0,final_velocity2=0,final_velocity3,angle_thrown1,time_travel1=0;
+float object_collision=0;
 float triangle_rot_dir = 1;
 float rectangle_rot_dir = 1;
 bool triangle_rot_status = true;
@@ -227,6 +229,8 @@ bool shoot =0;
 float distance1;
 float distance3;
 float power=40;
+float power1=0;
+float additional_angle=0;
 /* Executed when a regular key is pressed/released/held-down */
 /* Prefered for Keyboard events */
 void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -266,6 +270,27 @@ void keyboardChar (GLFWwindow* window, unsigned int key)
     case 'Q':
     case 'q':
             quit(window);
+            break;
+    case 'f':
+            power1+=1;
+            break;
+    case 's':
+            power1-=1;
+            break;
+    case ' ':
+            shoot =1;
+            angle_thrown = tanker_angle - M_PI/6;
+            initial_velocity = power*cos(angle_thrown);
+            initial_velocity1 = power*sin(angle_thrown);
+            horizontal_translation = -3 - 0.1*cos(angle_thrown);
+            vertical_translation = -2  - 0.65*sin(angle_thrown);
+            time_travel = 0;
+            break;
+    case 'a':
+            additional_angle +=M_PI/18;
+            break;
+    case 'b':
+            additional_angle -=M_PI/18;
             break;
     default:
       break;
@@ -365,9 +390,9 @@ void createTriangle1 ()
   };
 
   static const GLfloat color_buffer_data [] = {
-    1,1,1, // color 0
-    1,1,1, // color 1
-    1,1,1, // color 2
+    1,1,0, // color 0
+    1,1,0, // color 1
+    1,1,0, // color 2
   };
 
   // create3DObject creates and returns a handle to a VAO that can be used later
@@ -416,12 +441,13 @@ void createPowerBoxes()
   };
 
   static const GLfloat color_buffer_data [] = {
-    1,1,1,
-    1,1,1,
-    1,1,1,
-    1,1,1,
-    1,1,1,
-    1,1,1,  
+    152/255.0, 205/255.0, 152/255.0,
+    152/255.0, 205/255.0, 152/255.0,
+    152/255.0, 205/255.0, 152/255.0,
+
+    152/255.0, 205/255.0, 152/255.0,
+    152/255.0, 205/255.0, 152/255.0,
+    152/255.0, 205/255.0, 152/255.0,  
   };
 
   // create3DObject creates and returns a handle to a VAO that can be used later
@@ -472,12 +498,12 @@ void wall_collision(float x_centre,float y_centre,VAO* obj)
       if(horizontal_translation<x_centre && ((y_centre-0.55)<vertical_translation) &&  vertical_translation<(y_centre+0.55))
       {
         horizontal_translation = -0.2+x_centre;
-        cout << "2" << endl;
+        // cout << "2" << endl;
       }
       else if(horizontal_translation>x_centre && ((x_centre-0.55)<vertical_translation<(x_centre+0.55)))
       {
         horizontal_translation = x_centre + 0.2;
-        cout << "3" << endl;
+        // cout << "3" << endl;
       }
       else
       {
@@ -488,9 +514,10 @@ void wall_collision(float x_centre,float y_centre,VAO* obj)
           vertical_translation = y_centre + 0.9;
           initial_velocity *= -1*coefficient_of_elasticity;
         }
-        cout << initial_velocity << " " <<  initial_velocity1 << endl;
+        // cout << initial_velocity << " " <<  initial_velocity1 << endl;
         time_travel = 0;
-        cout << "1" << endl;        // cout << y_centre-0.6  << " " <<  vertical_translation << " " << y_centre+0.6 << endl;
+        // cout << "1" << endl; 
+               // cout << y_centre-0.6  << " " <<  vertical_translation << " " << y_centre+0.6 << endl;
         // cout << horizontal_translation << " " << x_centre << endl;
       }
     } 
@@ -514,8 +541,8 @@ void drawCircle(VAO* obj,float horizontal_translation,float vertical_translation
   draw3DObject(obj);  
   }
 }
-float ar[4];
-void bullet(VAO *obj,float horizontal_translation,float vertical_translation,float time_travel,float angle_thrown)
+float ar[8];
+void bullet(VAO *obj,float horizontal_translation,float vertical_translation,float time_travel,float angle_thrown,int flagg,float initial_velocity,float initial_velocity1,float final_velocity,float final_velocity1)
 {
   // 
   drawCircle(obj,horizontal_translation,vertical_translation);
@@ -524,16 +551,17 @@ void bullet(VAO *obj,float horizontal_translation,float vertical_translation,flo
   final_velocity = sqrt(sqr(initial_velocity) - ((horizontal_translation+3)*8*0.001));
   final_velocity1 = initial_velocity1 - time_travel*89;
   // cout << final_velocity1 << " " << initial_velocity1 << " " <<  vertical_translation << endl;
-  if(vertical_translation<-3.8)
+  if(vertical_translation<-3.7)
   {
     time_travel = 0;
     // cout<<initial_velocity1<<" "<<final_velocity1<<endl;
     initial_velocity1 *= coefficient_of_elasticity;
-    vertical_translation = -3.8; 
+    vertical_translation = -3.7; 
   }
-  time_travel += 0.01;
+  if(flagg==1)
+    time_travel += 0.01;
   // cout<< time_travel << endl;
-  if(horizontal_translation>4 || horizontal_translation<-4)
+  if((horizontal_translation>4 || horizontal_translation<-4) && (flagg==1))
   {
     shoot=0;
     horizontal_translation = -3 - 0.1*cos(angle_thrown);
@@ -544,6 +572,10 @@ void bullet(VAO *obj,float horizontal_translation,float vertical_translation,flo
   ar[1]=vertical_translation;
   ar[2]=time_travel;
   ar[3]=angle_thrown;
+  ar[4]=initial_velocity;
+  ar[5]=initial_velocity1;
+  ar[6]=final_velocity;
+  ar[7]=final_velocity1;
 }
 
 
@@ -568,14 +600,19 @@ void draw ()
   //  Don't change unless you are sure!!
   if(shoot==1)
   {
-    bullet(triangle,horizontal_translation,vertical_translation,time_travel,angle_thrown);
+    bullet(triangle,horizontal_translation,vertical_translation,time_travel,angle_thrown,1,initial_velocity,initial_velocity1,final_velocity,final_velocity1);
     horizontal_translation=ar[0];
     vertical_translation=ar[1];
     time_travel=ar[2];
     angle_thrown=ar[3];
+    initial_velocity = ar[4];
+    initial_velocity1= ar[5];
+    final_velocity=ar[6];
+    final_velocity1=ar[7];
     // initial_velocity = 40*cos(angle_thrown);
     // initial_velocity1 = 40*sin(angle_thrown);
   }
+  
   
   
   Matrices.view = glm::lookAt(glm::vec3(0,0,3), glm::vec3(0,0,0), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane 
@@ -592,21 +629,48 @@ void draw ()
   glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
   draw3DObject(rectangle);
 
+  object_collision = sqrt(sqr(horizontal_translation- horizontal_translation1)+ sqr(vertical_translation- vertical_translation1));
+  // cout << object_collision << " &"<< endl;
+  if(object_collision<0.4)
+  {
+    initial_velocity2 = final_velocity;
+  //   initial_velocity3 = final_velocity1;
+  //   angle_thrown1 = angle_thrown;
+  //   initial_velocity *= -1;
+  //   cout << "########" << endl;
+  }
+
   // Increment angles
   wall_collision(1,-3.2,rectangle);
   wall_collision(0.9,-3.2,rectangle);
   wall_collision(0.8,-3.2,rectangle);
   if(shoot==1)
     drawCircle(triangle,horizontal_translation,vertical_translation);
-  drawCircle(triangle1,0.9,-2.4);
+  // cout << horizontal_translation1 << vertical_translation1 << time_travel1 << angle_thrown1 << endl;
+  bullet(triangle1,horizontal_translation1,vertical_translation1,time_travel1,angle_thrown1,0,initial_velocity2,initial_velocity3,final_velocity2,final_velocity3);
+  horizontal_translation1=ar[0];
+  vertical_translation1=ar[1];
+  time_travel1=ar[2];
+  angle_thrown1=ar[3];
+  initial_velocity2=ar[4];
+  initial_velocity3=ar[5];
+  final_velocity2=ar[6];
+  final_velocity3=ar[7];
+
+  
   // wall_collision(1,0);
   for(int iiii=0;iiii<7;iiii++)
   {  
     wall_collision(3.9,3.4-iiii*1.2,rectangle);
   }
-  for(int iiii=0;iiii<distance3+2;iiii++)
+  for(int iiii=0;iiii<distance3+2+power1;iiii++)
   {
     drawing_walls(-3.8+0.3*iiii,3.7,powerboxes);
+  }
+
+  for(int iiii=0;iiii<39;iiii++)
+  {
+    drawing_walls(-3.9+0.2*iiii,-3.9,powerboxes);
   }
   //camera_rotation_angle++; // Simulating camera rotation
   //triangle_rotation = triangle_rotation + increments*triangle_rot_dir*triangle_rot_status;
@@ -713,14 +777,17 @@ int main (int argc, char** argv)
         glfwGetCursorPos(window,&xmousePos,&ymousePos);
         if(xmousePos<500)
         {
-          tanker_angle = atan2(500 - ymousePos,xmousePos-70) + M_PI/7;
+          tanker_angle = atan2(500 - ymousePos,xmousePos-70) + M_PI/7 + additional_angle;
           distance3 = sqr(-3 - ((xmousePos*8)/600)) + sqr(-2 - (((600-ymousePos)*8)/600));
           // cout << distance3 <<  " " << -3 - ((xmousePos*8)/600) << " " << -2 - ((ymousePos*8)/600) << endl;
           distance3 -= 40;
           distance3 /= 15;
           distance3 = floor(distance3);
-          power = 30+3*distance3;
-          // cout << power << endl;
+          power = 30+2*distance3+power1;
+          if(tanker_angle>M_PI/2)
+          {
+            tanker_angle = M_PI/1.5;
+          }
         }
         // cout << tanker_angle << endl;
   //      cout << xmousePos <<  " " << ymousePos << endl;
