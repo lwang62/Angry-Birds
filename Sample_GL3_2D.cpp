@@ -234,6 +234,7 @@ float additional_angle=0;
 bool iscollide = 0;
 int timetonextcollide = 0;
 int flagfly=0;
+int score=0;
 /* Executed when a regular key is pressed/released/held-down */
 /* Prefered for Keyboard events */ 
 void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -387,7 +388,7 @@ void reshapeWindow (GLFWwindow* window, int width, int height)
     Matrices.projection = glm::ortho(-zoomX/2.0f, zoomX/2.0f, -zoomY/2.0f, zoomY/2.0f, 0.1f, 500.0f);
 }
 
-VAO *triangle, *rectangle, *powerboxes, *triangle1;
+VAO *triangle, *rectangle, *powerboxes, *triangle1, *scoresource;
 
 // Creates the triangle object used in this sample code
 void createTriangle ()
@@ -486,6 +487,34 @@ void createPowerBoxes()
   // create3DObject creates and returns a handle to a VAO that can be used later
   powerboxes = create3DObject(GL_TRIANGLES, 6, vertex_buffer_data, color_buffer_data, GL_FILL);
 }
+
+
+void scorerectangle()
+{
+  static const GLfloat vertex_buffer_data [] = {
+    -0.05,-0.05,0, // vertex 1
+    0.05,-0.05,0, // vertex 2
+    0.05, 0.05,0, // vertex 3
+
+    0.05, 0.05,0, // vertex 3
+    -0.05, 0.05,0, // vertex 4
+    -0.05,-0.05,0  // vertex 1
+  };
+  static const GLfloat color_buffer_data [] = {
+    152/255.0, 205/255.0, 152/255.0,
+    152/255.0, 205/255.0, 152/255.0,
+    152/255.0, 205/255.0, 152/255.0,
+
+    152/255.0, 205/255.0, 152/255.0,
+    152/255.0, 205/255.0, 152/255.0,
+    152/255.0, 205/255.0, 152/255.0,  
+  };
+
+  // create3DObject creates and returns a handle to a VAO that can be used later
+  scoresource = create3DObject(GL_TRIANGLES, 6, vertex_buffer_data, color_buffer_data, GL_FILL);
+
+}
+
 float camera_rotation_angle = 90;
 float rectangle_rotation = 0;
 float triangle_rotation = 0;
@@ -556,41 +585,41 @@ void wall_collision(float x_centre,float y_centre,VAO* obj)
     } 
   }
 }
-// void bird_collision()
-// {
-//   // float distance4 = sqrt((sqr(walls_position[iii][0]-horizontal_translation1)) + (sqr(walls_position[iii][1]-vertical_translation1)));
-//   if((horizontal_translation>0.4 && horizontal_translation<0.9) && (vertical_translation<-1.9))
-//   {
-//     initial_velocity *= -1*0.8;
-//     horizontal_translation = 0.4;
-//   }
-//   if((horizontal_translation1>0.4 && horizontal_translation1<0.9) && (vertical_translation1<-1.8))
-//   {
-//     initial_velocity2 *= -1*0.8;
-//     horizontal_translation1 = 0.3;
-//   }
-//   if((horizontal_translation>0.9 && horizontal_translation<1.2) && (vertical_translation<-1.9))
-//   {
-//     initial_velocity *= -1*0.8;
-//     horizontal_translation = 1.2;
-//   }
-//   if((horizontal_translation1>0.9 && horizontal_translation1<1.3) && (vertical_translation1<-1.6))
-//   {
-//     initial_velocity2 *= -1*0.8;
-//     horizontal_translation1 = 1.3;
-//   }
-//   if(vertical_translation<-1.6 && (horizontal_translation>0.5 && horizontal_translation<1.1))
-//   {
-//     time_travel = 0;
-//     // cout<<initial_velocity1<<" "<<final_velocity1<<endl;
-//     initial_velocity1 *= coefficient_of_elasticity;
-//     vertical_translation = -1.7;
-//     if(initial_velocity1<0)
-//     {
-//       initial_velocity1 *= -1;
-//     }
-//   }
-// }
+void bird_collision()
+{
+  // float distance4 = sqrt((sqr(walls_position[iii][0]-horizontal_translation1)) + (sqr(walls_position[iii][1]-vertical_translation1)));
+  if((horizontal_translation>0.4 && horizontal_translation<0.9) && (vertical_translation<-1.9))
+  {
+    initial_velocity *= -1*0.8;
+    horizontal_translation = 0.4;
+  }
+  if((horizontal_translation1>0.4 && horizontal_translation1<0.9) && (vertical_translation1<-1.8))
+  {
+    initial_velocity2 *= -1*0.8;
+    horizontal_translation1 = 0.3;
+  }
+  if((horizontal_translation>0.9 && horizontal_translation<1.2) && (vertical_translation<-1.9))
+  {
+    initial_velocity *= -1*0.8;
+    horizontal_translation = 1.2;
+  }
+  if((horizontal_translation1>0.9 && horizontal_translation1<1.3) && (vertical_translation1<-1.6))
+  {
+    initial_velocity2 *= -1*0.8;
+    horizontal_translation1 = 1.3;
+  }
+  if(vertical_translation<-1.6 && (horizontal_translation>0.5 && horizontal_translation<1.1))
+  {
+    time_travel = 0;
+    // cout<<initial_velocity1<<" "<<final_velocity1<<endl;
+    initial_velocity1 *= coefficient_of_elasticity;
+    vertical_translation = -1.7;
+    if(initial_velocity1<0)
+    {
+      initial_velocity1 *= -1;
+    }
+  }
+}
 
 void drawCircle(VAO* obj,float horizontal_translation,float vertical_translation)
 {
@@ -761,14 +790,14 @@ Matrices.projection = glm::ortho(-zoomX/2.0f, zoomX/2.0f, -zoomY/2.0f, zoomY/2.0
   MVP = VP * Matrices.model; // MVP = p * V * M
   glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
   draw3DObject(rectangle);
-  cout << horizontal_translation1 << " " << vertical_translation1 << " " << initial_velocity2 << " " << initial_velocity3 << " " << time_travel1<< endl;
+  // cout << horizontal_translation1 << " " << vertical_translation1 << " " << initial_velocity2 << " " << initial_velocity3 << " " << time_travel1<< endl;
   object_collision = sqrt(sqr(horizontal_translation- horizontal_translation1)+ sqr(vertical_translation- vertical_translation1));
   // cout << object_collision << " &"<< endl;
   if(object_collision<=0.4 && iscollide==0)
   {
     initial_velocity2 = (2*initial_velocity)/3;
     initial_velocity3 = (2*initial_velocity1)/3;
-    cout << initial_velocity << " " << initial_velocity1 << " " << final_velocity << " " << final_velocity1 << endl;
+    // cout << initial_velocity << " " << initial_velocity1 << " " << final_velocity << " " << final_velocity1 << endl;
     // initial_velocity2 = (2.0*initial_velocity)/3.0 + (final_velocity)/3.0;
     // initial_velocity3 = (2.0*initial_velocity1)/3.0 + (final_velocity1)/3.0;
     // initial_velocity *= 1/2.0;
@@ -778,7 +807,8 @@ Matrices.projection = glm::ortho(-zoomX/2.0f, zoomX/2.0f, -zoomY/2.0f, zoomY/2.0
     initial_velocity1 = -(initial_velocity1)/1.5 ;
     // + (4.0*final_velocity3)/3.0;
     time_travel=0;
-    cout << initial_velocity << " " << initial_velocity1 << endl;
+    score++;
+    // cout << initial_velocity << " " << initial_velocity1 << endl;
 
     // cout << initial_velocity3 << endl;
     angle_thrown1 = M_PI/4;
@@ -790,9 +820,9 @@ Matrices.projection = glm::ortho(-zoomX/2.0f, zoomX/2.0f, -zoomY/2.0f, zoomY/2.0
   }
 
   // Increment angles
-  wall_collision(1,-3.2,rectangle);
-  wall_collision(0.8,-3.2,rectangle);
-  wall_collision(0.6,-3.2,rectangle);
+  // wall_collision(1,-3.2,rectangle);
+  // wall_collision(0.8,-3.2,rectangle);
+  // wall_collision(0.6,-3.2,rectangle);
   if(shoot==1)
     drawCircle(triangle,horizontal_translation,vertical_translation);
   // cout << horizontal_translation1 << vertical_translation1 << time_travel1 << angle_thrown1 << endl;
@@ -807,14 +837,14 @@ Matrices.projection = glm::ortho(-zoomX/2.0f, zoomX/2.0f, -zoomY/2.0f, zoomY/2.0
   final_velocity3=br[7];
 
 
-  // for(int iiii=0;iiii<10;iiii++)
-  // {
-  //   drawing_walls(0.6,-3.8+0.2*iiii,powerboxes);
-  //   drawing_walls(0.8,-3.8+0.2*iiii,powerboxes);
-  //   drawing_walls(1,-3.8+0.2*iiii,powerboxes);
-  // }
+  for(int iiii=0;iiii<10;iiii++)
+  {
+    drawing_walls(0.6,-3.8+0.2*iiii,powerboxes);
+    drawing_walls(0.8,-3.8+0.2*iiii,powerboxes);
+    drawing_walls(1,-3.8+0.2*iiii,powerboxes);
+  }
   // wall_collision(1,0);
-  // bird_collision();
+  bird_collision();
   for(int iiii=0;iiii<40;iiii++)
   {  
     drawing_walls(3.9,3.9-iiii*0.2,powerboxes);
@@ -832,6 +862,28 @@ Matrices.projection = glm::ortho(-zoomX/2.0f, zoomX/2.0f, -zoomY/2.0f, zoomY/2.0
   {
     drawing_walls(-3.9+0.2*iiii,-3.9,powerboxes);
   }
+///////////////////////////score
+  for(int iiii=0;(iiii<6) && (score==0 || score==1 || score==2 || score==3 || score==7 || score==8 || score==9 || score==4);iiii++)
+    drawing_walls(3,3.6-0.12*iiii,scoresource);
+
+  for(int iiii=0;(iiii<6) && (score==0 || score==1 || score==3 || score==4 || score==5 || score==6 || score==7 || score==8 || score==9);iiii++)
+      drawing_walls(3,2.87-0.12*iiii,scoresource);
+
+  for(int iiii=0;(iiii<6) && (score==0 || score==4 || score==5 || score==6 || score==8 || score==9);iiii++)
+    drawing_walls(2.28,3.6-0.12*iiii,scoresource);
+
+  for(int iiii=0;(iiii<7) && (score==0 || score==2 || score==6 || score==8);iiii++)
+    drawing_walls(2.28,2.87-0.12*iiii,scoresource);
+
+  for(int iiii=0;(iiii<7) && (score==0 || score==2 || score==3 || score==5 || score==6 || score==7 || score==8 || score==9);iiii++)
+    drawing_walls(3-0.12*iiii,3.6,scoresource);
+
+  for(int iiii=0;(iiii<7) && (score==0 || score==2 || score==3 || score==5 || score==6 || score==8);iiii++)
+    drawing_walls(3-0.12*iiii,2.15,scoresource);
+
+  for(int iiii=0;(iiii<7) && (score==2 || score==3 || score==4 || score==5 || score==6 || score==8 || score==9);iiii++)
+    drawing_walls(3-0.12*iiii,2.90,scoresource);
+//////////////////////
 }
 
 /* Initialise glfw window, I/O callbacks and the renderer to use */
@@ -893,6 +945,7 @@ void initGL (GLFWwindow* window, int width, int height)
   createRectangle();
   createPowerBoxes();
   createTriangle1();
+  scorerectangle();
   
   // Create and compile our GLSL program from the shaders
   programID = LoadShaders( "Sample_GL.vert", "Sample_GL.frag" );
