@@ -216,7 +216,7 @@ float vertical_translation = -2;
 float horizontal_translation = -3;
 float final_velocity=0;
 float final_velocity1=0;
-float horizontal_translation1=0.9,vertical_translation1=-2.4,initial_velocity2=0,initial_velocity3=0,final_velocity2=0,final_velocity3,angle_thrown1,time_travel1=0;
+float horizontal_translation1=0.8,vertical_translation1=-1.7,initial_velocity2=0,initial_velocity3=0,final_velocity2=0,final_velocity3,angle_thrown1,time_travel1=0;
 float object_collision=0;
 float triangle_rot_dir = 1;
 float rectangle_rot_dir = 1;
@@ -231,8 +231,11 @@ float distance3;
 float power=40;
 float power1=0;
 float additional_angle=0;
+bool iscollide = 0;
+int timetonextcollide = 0;
+int flagfly=0;
 /* Executed when a regular key is pressed/released/held-down */
-/* Prefered for Keyboard events */
+/* Prefered for Keyboard events */ 
 void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 {
      // Function is called first on GLFW_PRESS.
@@ -272,10 +275,12 @@ void keyboardChar (GLFWwindow* window, unsigned int key)
             quit(window);
             break;
     case 'f':
-            power1+=1;
+            if(distance3+2+power1<22)
+              power1+=1;
             break;
     case 's':
-            power1-=1;
+            if(distance3+2+power1>1)
+              power1-=1;
             break;
     case ' ':
             shoot =1;
@@ -296,10 +301,38 @@ void keyboardChar (GLFWwindow* window, unsigned int key)
       break;
   }
 }
+float zoomX=8,zoomY=8;
+
+void cbfun (GLFWwindow* window, double x,double y)
+{
+  cout << x << "<<<<" << y<< endl;
+    if(y==-1)
+    {
+        zoomX+=1;
+        zoomY+=1;
+        cout << "::::::::" << endl;      
+    }
+    if(y==1)
+    {
+      zoomX-=1;
+      zoomY-=1;
+    }
+}
 
 /* Executed when a mouse button is pressed/released */
 void mouseButton (GLFWwindow* window, int button, int action, int mods)
 {
+    if(button==3)
+    {
+        zoomX+=1;
+        zoomY+=1;
+        cout << "::::::::" << endl;      
+    }
+    if(button==4)
+    {
+      zoomX-=1;
+      zoomY-=1;
+    }
     switch (button) {
         case GLFW_MOUSE_BUTTON_LEFT:
             if (action == GLFW_PRESS)
@@ -351,7 +384,7 @@ void reshapeWindow (GLFWwindow* window, int width, int height)
     // Matrices.projection = glm::perspective (fov, (GLfloat) fbwidth / (GLfloat) fbheight, 0.1f, 500.0f);
 
     // Ortho projection for 2D views
-    Matrices.projection = glm::ortho(-4.0f, 4.0f, -4.0f, 4.0f, 0.1f, 500.0f);
+    Matrices.projection = glm::ortho(-zoomX/2.0f, zoomX/2.0f, -zoomY/2.0f, zoomY/2.0f, 0.1f, 500.0f);
 }
 
 VAO *triangle, *rectangle, *powerboxes, *triangle1;
@@ -523,6 +556,41 @@ void wall_collision(float x_centre,float y_centre,VAO* obj)
     } 
   }
 }
+// void bird_collision()
+// {
+//   // float distance4 = sqrt((sqr(walls_position[iii][0]-horizontal_translation1)) + (sqr(walls_position[iii][1]-vertical_translation1)));
+//   if((horizontal_translation>0.4 && horizontal_translation<0.9) && (vertical_translation<-1.9))
+//   {
+//     initial_velocity *= -1*0.8;
+//     horizontal_translation = 0.4;
+//   }
+//   if((horizontal_translation1>0.4 && horizontal_translation1<0.9) && (vertical_translation1<-1.8))
+//   {
+//     initial_velocity2 *= -1*0.8;
+//     horizontal_translation1 = 0.3;
+//   }
+//   if((horizontal_translation>0.9 && horizontal_translation<1.2) && (vertical_translation<-1.9))
+//   {
+//     initial_velocity *= -1*0.8;
+//     horizontal_translation = 1.2;
+//   }
+//   if((horizontal_translation1>0.9 && horizontal_translation1<1.3) && (vertical_translation1<-1.6))
+//   {
+//     initial_velocity2 *= -1*0.8;
+//     horizontal_translation1 = 1.3;
+//   }
+//   if(vertical_translation<-1.6 && (horizontal_translation>0.5 && horizontal_translation<1.1))
+//   {
+//     time_travel = 0;
+//     // cout<<initial_velocity1<<" "<<final_velocity1<<endl;
+//     initial_velocity1 *= coefficient_of_elasticity;
+//     vertical_translation = -1.7;
+//     if(initial_velocity1<0)
+//     {
+//       initial_velocity1 *= -1;
+//     }
+//   }
+// }
 
 void drawCircle(VAO* obj,float horizontal_translation,float vertical_translation)
 {
@@ -541,9 +609,10 @@ void drawCircle(VAO* obj,float horizontal_translation,float vertical_translation
   draw3DObject(obj);  
   }
 }
-float ar[8];
+float ar[8],br[8];
 void bullet(VAO *obj,float horizontal_translation,float vertical_translation,float time_travel,float angle_thrown,int flagg,float initial_velocity,float initial_velocity1,float final_velocity,float final_velocity1)
 {
+  // cout << initial_velocity << " " << initial_velocity1 << endl;
   // 
   drawCircle(obj,horizontal_translation,vertical_translation);
   horizontal_translation += initial_velocity*cos(angle_thrown)*0.005;
@@ -555,10 +624,28 @@ void bullet(VAO *obj,float horizontal_translation,float vertical_translation,flo
   {
     time_travel = 0;
     // cout<<initial_velocity1<<" "<<final_velocity1<<endl;
-    initial_velocity1 *= coefficient_of_elasticity;
-    vertical_translation = -3.7; 
+    if(flagg==1)
+      initial_velocity1 *= coefficient_of_elasticity;
+    vertical_translation = -3.7;
+    if(initial_velocity1<0)
+    {
+      initial_velocity1 *= -1;
+    }
+    // cout << initial_velocity1 << "  " << angle_thrown << endl;
   }
-  if(flagg==1)
+  // if(vertical_translation>1.8 && (horizontal_translation>-1.4 && horizontal_translation<0.4))
+  // {
+  //   initial_velocity1 = initial_velocity1/8;
+  //   // time_travel = 0;
+  //   // time_travel=0; 
+  //   vertical_translation=1.75;
+  // }
+  if(horizontal_translation>3.7)
+  {
+    initial_velocity *= -1;
+    horizontal_translation = 3.7;
+  }
+  if(flagg==1 || final_velocity>2 || final_velocity1<-2)
     time_travel += 0.01;
   // cout<< time_travel << endl;
   if((horizontal_translation>4 || horizontal_translation<-4) && (flagg==1))
@@ -578,6 +665,44 @@ void bullet(VAO *obj,float horizontal_translation,float vertical_translation,flo
   ar[7]=final_velocity1;
 }
 
+void specialbullet(VAO *obj,float horizontal_translation,float vertical_translation,float time_travel,float angle_thrown,int flagg,float initial_velocity,float initial_velocity1,float final_velocity,float final_velocity1)
+{
+  drawCircle(obj,horizontal_translation,vertical_translation);
+  horizontal_translation += initial_velocity*cos(angle_thrown)*0.005;
+  vertical_translation += initial_velocity1*sin(angle_thrown)*0.005 - (time_travel*time_travel);
+  // cout << vertical_translation << " " << time_travel<< endl;
+  final_velocity1 = initial_velocity1 - time_travel*89;
+  final_velocity = sqrt(sqr(initial_velocity) - ((horizontal_translation+3)*8*0.001));
+  if(horizontal_translation>3.6)
+  {
+    initial_velocity *= -1;
+    horizontal_translation = 3.6 ;
+    // cout << "???????" << endl;
+  }
+  if(vertical_translation<-3.6)
+  {
+    time_travel = 0;
+    initial_velocity1 = -final_velocity1*coefficient_of_elasticity;
+    initial_velocity1 *=0.8;
+    vertical_translation = -3.5;
+    if(initial_velocity1<0)
+    {
+      initial_velocity *= -1;
+    }
+  }
+  if(iscollide==1 || flagfly==1)
+  {
+    time_travel+=0.01;
+  }
+  // cout << initial_velocity <<  " " << angle_thrown << " " << horizontal_translation <<  endl;
+  br[0]=horizontal_translation;
+  br[1]=vertical_translation;
+  br[2]=time_travel;
+  br[4]=initial_velocity;
+  br[5]=initial_velocity1;
+  br[6]=final_velocity;
+  br[7]=final_velocity1;
+}
 
 void draw ()
 {
@@ -587,7 +712,7 @@ void draw ()
   // use the loaded shader program
   // Don't change unless you know what you are doing
   glUseProgram (programID);
-
+Matrices.projection = glm::ortho(-zoomX/2.0f, zoomX/2.0f, -zoomY/2.0f, zoomY/2.0f, 0.1f, 500.0f);
   // Eye - Location of camera. Don't change unless you are sure!!
   glm::vec3 eye ( 5*cos(camera_rotation_angle*M_PI/180.0f), 0, 5*sin(camera_rotation_angle*M_PI/180.0f) );
   // Target - Where is the camera looking at.  Don't change unless you are sure!!
@@ -613,8 +738,16 @@ void draw ()
     // initial_velocity1 = 40*sin(angle_thrown);
   }
   
-  
-  
+  if(iscollide==1)
+  {
+    flagfly = 1;
+    timetonextcollide++;
+  }  
+  if(timetonextcollide==100)
+  {
+    iscollide=0;
+    timetonextcollide=0;
+  }
   Matrices.view = glm::lookAt(glm::vec3(0,0,3), glm::vec3(0,0,0), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane 
   glm::mat4 VP = Matrices.projection * Matrices.view;
   glm::mat4 MVP;  // MVP = Projection * View * Model
@@ -628,54 +761,77 @@ void draw ()
   MVP = VP * Matrices.model; // MVP = p * V * M
   glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
   draw3DObject(rectangle);
-
+  cout << horizontal_translation1 << " " << vertical_translation1 << " " << initial_velocity2 << " " << initial_velocity3 << " " << time_travel1<< endl;
   object_collision = sqrt(sqr(horizontal_translation- horizontal_translation1)+ sqr(vertical_translation- vertical_translation1));
   // cout << object_collision << " &"<< endl;
-  if(object_collision<0.4)
+  if(object_collision<=0.4 && iscollide==0)
   {
-    initial_velocity2 = final_velocity;
-  //   initial_velocity3 = final_velocity1;
+    initial_velocity2 = (2*initial_velocity)/3;
+    initial_velocity3 = (2*initial_velocity1)/3;
+    cout << initial_velocity << " " << initial_velocity1 << " " << final_velocity << " " << final_velocity1 << endl;
+    // initial_velocity2 = (2.0*initial_velocity)/3.0 + (final_velocity)/3.0;
+    // initial_velocity3 = (2.0*initial_velocity1)/3.0 + (final_velocity1)/3.0;
+    // initial_velocity *= 1/2.0;
+    // cout << final_velocity2 << " " << final_velocity3 << endl;
+    initial_velocity = -(initial_velocity)/1.5;
+     // + (4.0*final_velocity2)/3.0;
+    initial_velocity1 = -(initial_velocity1)/1.5 ;
+    // + (4.0*final_velocity3)/3.0;
+    time_travel=0;
+    cout << initial_velocity << " " << initial_velocity1 << endl;
+
+    // cout << initial_velocity3 << endl;
+    angle_thrown1 = M_PI/4;
   //   angle_thrown1 = angle_thrown;
   //   initial_velocity *= -1;
-  //   cout << "########" << endl;
+    cout << "########" << endl;
+    iscollide =1;
+    // horizontal_translation -=0.4;
   }
 
   // Increment angles
   wall_collision(1,-3.2,rectangle);
-  wall_collision(0.9,-3.2,rectangle);
   wall_collision(0.8,-3.2,rectangle);
+  wall_collision(0.6,-3.2,rectangle);
   if(shoot==1)
     drawCircle(triangle,horizontal_translation,vertical_translation);
   // cout << horizontal_translation1 << vertical_translation1 << time_travel1 << angle_thrown1 << endl;
-  bullet(triangle1,horizontal_translation1,vertical_translation1,time_travel1,angle_thrown1,0,initial_velocity2,initial_velocity3,final_velocity2,final_velocity3);
-  horizontal_translation1=ar[0];
-  vertical_translation1=ar[1];
-  time_travel1=ar[2];
-  angle_thrown1=ar[3];
-  initial_velocity2=ar[4];
-  initial_velocity3=ar[5];
-  final_velocity2=ar[6];
-  final_velocity3=ar[7];
+  specialbullet(triangle1,horizontal_translation1,vertical_translation1,time_travel1,angle_thrown1,0,initial_velocity2,initial_velocity3,final_velocity2,final_velocity3);
+  horizontal_translation1=br[0];
+  vertical_translation1=br[1];
+  time_travel1=br[2];
+  // angle_thrown1=br[3];
+  initial_velocity2=br[4];
+  initial_velocity3=br[5];
+  final_velocity2=br[6];
+  final_velocity3=br[7];
 
-  
+
+  // for(int iiii=0;iiii<10;iiii++)
+  // {
+  //   drawing_walls(0.6,-3.8+0.2*iiii,powerboxes);
+  //   drawing_walls(0.8,-3.8+0.2*iiii,powerboxes);
+  //   drawing_walls(1,-3.8+0.2*iiii,powerboxes);
+  // }
   // wall_collision(1,0);
-  for(int iiii=0;iiii<7;iiii++)
+  // bird_collision();
+  for(int iiii=0;iiii<40;iiii++)
   {  
-    wall_collision(3.9,3.4-iiii*1.2,rectangle);
+    drawing_walls(3.9,3.9-iiii*0.2,powerboxes);
   }
-  for(int iiii=0;iiii<distance3+2+power1;iiii++)
+  int qwerty=distance3+2+power1;
+  for(int iiii=0;iiii<(qwerty);iiii++)
   {
     drawing_walls(-3.8+0.3*iiii,3.7,powerboxes);
   }
-
+  // for(int iiii=0;iiii<6;iiii++)
+  // {
+  //   drawing_walls(-1.4+0.2*iiii,2,powerboxes);
+  // }
   for(int iiii=0;iiii<39;iiii++)
   {
     drawing_walls(-3.9+0.2*iiii,-3.9,powerboxes);
   }
-  //camera_rotation_angle++; // Simulating camera rotation
-  //triangle_rotation = triangle_rotation + increments*triangle_rot_dir*triangle_rot_status;
-  //rectangle_rotation = rectangle_rotation + increments*rectangle_rot_dir*rectangle_rot_status;
- // }
 }
 
 /* Initialise glfw window, I/O callbacks and the renderer to use */
@@ -722,6 +878,7 @@ GLFWwindow* initGLFW (int width, int height)
 
     /* Register function to handle mouse click */
     glfwSetMouseButtonCallback(window, mouseButton);  // mouse button clicks
+    glfwSetScrollCallback (window,cbfun);
 
     return window;
 }
@@ -784,9 +941,24 @@ int main (int argc, char** argv)
           distance3 /= 15;
           distance3 = floor(distance3);
           power = 30+2*distance3+power1;
-          if(tanker_angle>M_PI/2)
+          if(tanker_angle>M_PI/1.5)
           {
-            tanker_angle = M_PI/1.5;
+            if(additional_angle>0)
+              additional_angle-=M_PI/18;
+            else
+              tanker_angle = M_PI/1.5;
+
+          }
+          if(tanker_angle<M_PI/6.5)
+          {
+            if(additional_angle<0)
+            {
+              additional_angle+=M_PI/18;
+            }
+            else
+            {
+              tanker_angle = M_PI/6.5;
+            }
           }
         }
         // cout << tanker_angle << endl;
